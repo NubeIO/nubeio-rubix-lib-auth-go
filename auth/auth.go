@@ -2,26 +2,25 @@ package auth
 
 import (
 	"github.com/NubeIO/nubeio-rubix-lib-auth-go/externaltoken"
+	"github.com/NubeIO/nubeio-rubix-lib-auth-go/internaltoken"
 	"github.com/NubeIO/nubeio-rubix-lib-auth-go/utils/security"
 	"net/http"
 	"strings"
 )
 
 func Authorize(request *http.Request) bool {
-	auth := strings.SplitN(request.Header.Get("Authorization"), " ", 2)
-	if len(auth) > 0 {
+	authorization := strings.SplitN(request.Header.Get("Authorization"), " ", 2)
+	if len(authorization) > 0 {
 		// Internal Auth
-		if len(auth) == 2 && auth[0] == "Internal" {
+		if len(authorization) == 2 && authorization[0] == "Internal" &&
+			authorization[1] == internaltoken.GetInternalToken(false) {
 			return true
 		}
 		// Token Auth
-		if len(auth) == 2 && auth[0] == "External" {
-			return externaltoken.ValidateToken(auth[1])
+		if len(authorization) == 2 && authorization[0] == "External" {
+			return externaltoken.ValidateToken(authorization[1])
 		}
-		authorized, err := security.DecodeJwtToken(auth[len(auth)-1])
-		if err != nil {
-			return false
-		}
+		authorized, _ := security.DecodeJwtToken(authorization[len(authorization)-1])
 		return authorized
 	}
 	return false
