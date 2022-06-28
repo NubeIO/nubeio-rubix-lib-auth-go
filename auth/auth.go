@@ -18,7 +18,7 @@ func Authorize(request *http.Request) bool {
 		}
 		// Token Auth
 		if len(authorization) == 2 && authorization[0] == "External" {
-			return externaltoken.ValidateToken(authorization[1])
+			return externaltoken.ValidateExternalToken(authorization[1])
 		}
 		authorized, _ := security.DecodeJwtToken(authorization[len(authorization)-1])
 		return authorized
