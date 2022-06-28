@@ -7,30 +7,41 @@ import (
 // Test are general test
 func Test(t *testing.T) {
 	// CreateToken
-	_, err := CreateToken("token")
+	externalToken, err := CreateExternalToken("token")
 	if err != nil {
-		t.Fatal("CreateToken failed")
+		t.Fatal("CreateExternalToken failed")
 	}
-	t.Log("CreateToken success")
+	t.Log("CreateExternalToken success")
 
-	// UpdateToken
-	_, err = UpdateToken("token", true)
+	// RegenerateExternalToken
+	_, err = RegenerateExternalToken(externalToken.UUID)
 	if err != nil {
-		t.Fatal("UpdateToken failed")
+		t.Fatal("RegenerateExternalToken failed")
 	}
-	t.Log("UpdateToken success")
+	t.Log("RegenerateExternalToken success")
+
+	// RegenerateExternalToken
+	_ = ValidateExternalToken(externalToken.Token)
+	t.Log("ValidateExternalToken success")
+
+	// BlockExternalToken
+	_, err = BlockExternalToken(externalToken.UUID, true)
+	if err != nil {
+		t.Fatal("BlockExternalToken failed")
+	}
+	t.Log("BlockExternalToken success")
 
 	// GetTokens
-	_, err = GetTokens()
+	_, err = GetExternalTokens()
 	if err != nil {
-		t.Fatal("GetTokens failed")
+		t.Fatal("GetExternalTokens failed")
 	}
-	t.Log("GetTokens success")
+	t.Log("GetExternalTokens success")
 
 	// DeleteToken
-	err = DeleteToken("token")
+	_, err = DeleteExternalToken(externalToken.UUID)
 	if err != nil {
-		t.Fatal("DeleteToken failed")
+		t.Fatal("DeleteExternalToken failed")
 	}
-	t.Log("DeleteToken success")
+	t.Log("DeleteExternalToken success")
 }

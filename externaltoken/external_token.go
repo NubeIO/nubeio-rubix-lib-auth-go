@@ -1,7 +1,9 @@
 package externaltoken
 
 import (
+	"crypto/rand"
 	"errors"
+	"fmt"
 	"github.com/NubeIO/nubeio-rubix-lib-auth-go/utils/file"
 	"github.com/NubeIO/nubeio-rubix-lib-auth-go/utils/security"
 	"strconv"
@@ -9,20 +11,30 @@ import (
 
 const FilePath = "/data/auth/external_token.csv"
 
-type Token struct {
+type ExternalToken struct {
+	UUID    string `json:"uuid"`
 	Name    string `json:"name" `
 	Token   string `json:"token" `
 	Blocked bool   `json:"blocked" `
 }
 
-func mapToToken(records [][]string) []*Token {
-	var tokens []*Token
-	for _, value := range records {
-		blocked, _ := strconv.ParseBool(value[2])
-		token := Token{Name: value[0], Token: "******", Blocked: blocked}
-		tokens = append(tokens, &token)
+func makeUUID() (uuid string) {
+	b := make([]byte, 16)
+	_, err := rand.Read(b)
+	if err != nil {
+		fmt.Println("Error: ", err)
+		return
 	}
-	return tokens
+	uuid = fmt.Sprintf("%X%X", b[0:4], b[4:6])
+	return
+}
+
+func mapToExternalToken(records [][]string) (externalTokens []*ExternalToken) {
+	for _, record := range records {
+		blocked, _ := strconv.ParseBool(record[3])
+		externalTokens = append(externalTokens, &ExternalToken{UUID: record[0], Name: record[1], Token: "******", Blocked: blocked})
+	}
+	return externalTokens
 }
 
 func validateName(name string) error {
@@ -30,23 +42,23 @@ func validateName(name string) error {
 	if err != nil {
 		return err
 	}
-	for _, v := range records {
-		if v[0] == name {
-			return errors.New("duplicate name")
+	for _, record := range records {
+		if record[1] == name {
+			return errors.New("name already exists")
 		}
 	}
 	return nil
 }
 
-func GetTokens() ([]*Token, error) {
+func GetExternalTokens() ([]*ExternalToken, error) {
 	records, err := file.ReadCsvFile(FilePath)
 	if err != nil {
 		return nil, err
 	}
-	return mapToToken(records), nil
+	return mapToExternalToken(records), nil
 }
 
-func CreateToken(name string) (*Token, error) {
+func CreateExternalToken(name string) (*ExternalToken, error) {
 	if err := validateName(name); err != nil {
 		return nil, err
 	}
@@ -54,57 +66,80 @@ func CreateToken(name string) (*Token, error) {
 	if err != nil {
 		return nil, err
 	}
-	token := &Token{Name: name, Token: security.GenerateToken(), Blocked: false}
-	records = append(records, []string{token.Name, token.Token, strconv.FormatBool(token.Blocked)})
+	externalToken := &ExternalToken{UUID: makeUUID(), Name: name, Token: security.GenerateToken(), Blocked: false}
+	records = append(records, []string{externalToken.UUID, externalToken.Name, externalToken.Token, strconv.FormatBool(externalToken.Blocked)})
 	err = file.WriteCsvFile(FilePath, records)
 	if err != nil {
 		return nil, err
 	}
-	return token, nil
+	return externalToken, nil
 }
 
-func UpdateToken(name string, blocked bool) (*Token, error) {
+func RegenerateExternalToken(uuid string) (*ExternalToken, error) {
 	records, err := file.ReadCsvFile(FilePath)
 	if err != nil {
 		return nil, err
 	}
-	for i, v := range records {
-		if v[0] == name {
-			v[2] = strconv.FormatBool(blocked)
-			records[i] = v
+	for i, record := range records {
+		if record[0] == uuid {
+			record[2] = security.GenerateToken()
+			records[i] = record
 			err = file.WriteCsvFile(FilePath, records)
 			if err != nil {
 				return nil, err
 			}
-			return &Token{Name: name, Token: "******", Blocked: blocked}, nil
+			blocked, _ := strconv.ParseBool(record[3])
+			return &ExternalToken{UUID: uuid, Name: record[1], Token: record[2], Blocked: blocked}, nil
 		}
 	}
 	return nil, errors.New("token not found")
-
 }
 
-func DeleteToken(name string) error {
+func BlockExternalToken(uuid string, blocked bool) (*ExternalToken, error) {
 	records, err := file.ReadCsvFile(FilePath)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	for i, v := range records {
-		if v[0] == name {
-			records = append(records[:i], records[i+1:]...)
-			return file.WriteCsvFile(FilePath, records)
+	for i, record := range records {
+		if record[0] == uuid {
+			record[3] = strconv.FormatBool(blocked)
+			records[i] = record
+			err = file.WriteCsvFile(FilePath, records)
+			if err != nil {
+				return nil, err
+			}
+			return &ExternalToken{UUID: uuid, Name: record[1], Token: "******", Blocked: blocked}, nil
 		}
 	}
-	return errors.New("token not found")
+	return nil, errors.New("token not found")
 }
 
-func ValidateToken(token string) bool {
+func DeleteExternalToken(uuid string) (bool, error) {
+	records, err := file.ReadCsvFile(FilePath)
+	if err != nil {
+		return false, err
+	}
+	for i, record := range records {
+		if record[0] == uuid {
+			records = append(records[:i], records[i+1:]...)
+			err := file.WriteCsvFile(FilePath, records)
+			if err != nil {
+				return false, err
+			}
+			return true, nil
+		}
+	}
+	return false, errors.New("token not found")
+}
+
+func ValidateExternalToken(token string) bool {
 	records, err := file.ReadCsvFile(FilePath)
 	if err != nil {
 		return false
 	}
-	for _, value := range records {
-		blocked, _ := strconv.ParseBool(value[2])
-		if value[1] == token && !blocked {
+	for _, record := range records {
+		blocked, _ := strconv.ParseBool(record[3])
+		if record[2] == token && !blocked {
 			return true
 		}
 	}
