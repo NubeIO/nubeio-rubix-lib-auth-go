@@ -1,9 +1,7 @@
 package externaltoken
 
 import (
-	"crypto/rand"
 	"errors"
-	"fmt"
 	"github.com/NubeIO/nubeio-rubix-lib-auth-go/utils/file"
 	"github.com/NubeIO/nubeio-rubix-lib-auth-go/utils/security"
 	"strconv"
@@ -13,23 +11,13 @@ const FilePath = "/data/auth/external_token.csv"
 
 type ExternalToken struct {
 	UUID    string `json:"uuid"`
-	Name    string `json:"name" `
-	Token   string `json:"token" `
-	Blocked bool   `json:"blocked" `
+	Name    string `json:"name"`
+	Token   string `json:"token"`
+	Blocked bool   `json:"blocked"`
 }
 
-func makeUUID() (uuid string) {
-	b := make([]byte, 16)
-	_, err := rand.Read(b)
-	if err != nil {
-		fmt.Println("Error: ", err)
-		return
-	}
-	uuid = fmt.Sprintf("%X%X", b[0:4], b[4:6])
-	return
-}
-
-func mapToExternalToken(records [][]string) (externalTokens []*ExternalToken) {
+func mapToExternalToken(records [][]string) []*ExternalToken {
+	externalTokens := make([]*ExternalToken, 0)
 	for _, record := range records {
 		blocked, _ := strconv.ParseBool(record[3])
 		externalTokens = append(externalTokens, &ExternalToken{UUID: record[0], Name: record[1], Token: "******", Blocked: blocked})
@@ -58,21 +46,21 @@ func GetExternalTokens() ([]*ExternalToken, error) {
 	return mapToExternalToken(records), nil
 }
 
-func CreateExternalToken(name string) (*ExternalToken, error) {
-	if err := validateName(name); err != nil {
+func CreateExternalToken(body *ExternalToken) (*ExternalToken, error) {
+	if err := validateName(body.Name); err != nil {
 		return nil, err
 	}
 	records, err := file.ReadCsvFile(FilePath)
 	if err != nil {
 		return nil, err
 	}
-	externalToken := &ExternalToken{UUID: makeUUID(), Name: name, Token: security.GenerateToken(), Blocked: false}
-	records = append(records, []string{externalToken.UUID, externalToken.Name, externalToken.Token, strconv.FormatBool(externalToken.Blocked)})
+	body.Token = security.GenerateToken()
+	records = append(records, []string{body.UUID, body.Name, body.Token, strconv.FormatBool(body.Blocked)})
 	err = file.WriteCsvFile(FilePath, records)
 	if err != nil {
 		return nil, err
 	}
-	return externalToken, nil
+	return body, nil
 }
 
 func RegenerateExternalToken(uuid string) (*ExternalToken, error) {
