@@ -1,13 +1,14 @@
 package externaltoken
 
 import (
+	"fmt"
 	"testing"
 )
 
 // Test are general test
 func Test(t *testing.T) {
 	// CreateToken
-	externalToken, err := CreateExternalToken("token")
+	externalToken, err := CreateExternalToken(&ExternalToken{Name: "token"})
 	if err != nil {
 		t.Fatal("CreateExternalToken failed")
 	}
@@ -32,11 +33,18 @@ func Test(t *testing.T) {
 	t.Log("BlockExternalToken success")
 
 	// GetTokens
-	_, err = GetExternalTokens()
+	externalTokens, err := GetExternalTokens()
 	if err != nil {
 		t.Fatal("GetExternalTokens failed")
 	}
-	t.Log("GetExternalTokens success")
+	t.Log(fmt.Sprintf("GetExternalTokens success %v", externalTokens))
+
+	// DeleteToken
+	externalToken, err = GetExternalToken(externalToken.UUID)
+	if err != nil {
+		t.Fatal("GetExternalToken failed")
+	}
+	t.Log(fmt.Sprintf("GetExternalToken success %v", externalToken))
 
 	// DeleteToken
 	_, err = DeleteExternalToken(externalToken.UUID)

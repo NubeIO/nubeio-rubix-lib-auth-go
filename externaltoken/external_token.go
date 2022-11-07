@@ -2,6 +2,7 @@ package externaltoken
 
 import (
 	"errors"
+	"fmt"
 	"github.com/NubeIO/nubeio-rubix-lib-auth-go/utils/file"
 	"github.com/NubeIO/nubeio-rubix-lib-auth-go/utils/security"
 	"strconv"
@@ -16,11 +17,21 @@ type ExternalToken struct {
 	Blocked bool   `json:"blocked"`
 }
 
-func mapToExternalToken(records [][]string) []*ExternalToken {
+func mapToExternalTokens(records [][]string) []*ExternalToken {
 	externalTokens := make([]*ExternalToken, 0)
 	for _, record := range records {
 		blocked, _ := strconv.ParseBool(record[3])
-		externalTokens = append(externalTokens, &ExternalToken{UUID: record[0], Name: record[1], Token: "******", Blocked: blocked})
+		token := record[2]
+		if len(token) > 12 {
+			token = fmt.Sprintf("******%s", token[len(token)-12:])
+		}
+		externalTokens = append(externalTokens,
+			&ExternalToken{
+				UUID:    record[0],
+				Name:    record[1],
+				Token:   token,
+				Blocked: blocked,
+			})
 	}
 	return externalTokens
 }
@@ -43,7 +54,21 @@ func GetExternalTokens() ([]*ExternalToken, error) {
 	if err != nil {
 		return nil, err
 	}
-	return mapToExternalToken(records), nil
+	return mapToExternalTokens(records), nil
+}
+
+func GetExternalToken(uuid string) (*ExternalToken, error) {
+	records, err := file.ReadCsvFile(FilePath)
+	if err != nil {
+		return nil, err
+	}
+	for _, record := range records {
+		if record[0] == uuid {
+			blocked, _ := strconv.ParseBool(record[3])
+			return &ExternalToken{UUID: uuid, Name: record[1], Token: record[2], Blocked: blocked}, nil
+		}
+	}
+	return nil, errors.New("token not found")
 }
 
 func CreateExternalToken(body *ExternalToken) (*ExternalToken, error) {
