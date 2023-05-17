@@ -25,3 +25,26 @@ func Authorize(request *http.Request) bool {
 	}
 	return false
 }
+
+func GetToken(request *http.Request) string {
+	authorization := strings.SplitN(request.Header.Get("Authorization"), " ", 2)
+	if len(authorization) > 0 {
+		// Internal Auth
+		if len(authorization) == 2 && authorization[0] == "Internal" &&
+			authorization[1] == internaltoken.GetInternalToken(false) {
+			return authorization[1]
+		}
+		// Token Auth
+		if len(authorization) == 2 && authorization[0] == "External" {
+			return authorization[1]
+		}
+		return authorization[len(authorization)-1]
+	}
+	return ""
+}
+
+func GetAuthorizedUsername(request *http.Request) string {
+	token := GetToken(request)
+	username, _ := security.GetAuthorizedUsername(token)
+	return username
+}
