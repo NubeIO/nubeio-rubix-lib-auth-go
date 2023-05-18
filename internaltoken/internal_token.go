@@ -12,7 +12,16 @@ import (
 
 const FilePath = "/data/rubix-service/data/internal_token.txt"
 
+var internalToken *string
+
 func GetInternalToken(withPrefix bool) string {
+	if internalToken != nil {
+		if withPrefix {
+			return fmt.Sprintf("Internal %s", *internalToken)
+		} else {
+			return *internalToken
+		}
+	}
 	f, err := os.Open(FilePath)
 	if err != nil {
 		log.Error(err)
@@ -23,14 +32,16 @@ func GetInternalToken(withPrefix bool) string {
 			log.Error(err)
 		}
 	}()
-	internalToken, err := ioutil.ReadAll(f)
+	bytes, err := ioutil.ReadAll(f)
 	if err != nil {
 		log.Error(err)
 	}
+	it := string(bytes)
+	internalToken = &it
 	if withPrefix {
-		return fmt.Sprintf("Internal %s", string(internalToken))
+		return fmt.Sprintf("Internal %s", *internalToken)
 	} else {
-		return string(internalToken)
+		return *internalToken
 	}
 }
 
@@ -38,8 +49,8 @@ func CreateInternalTokenIfDoesNotExist() {
 	if err := os.MkdirAll(filepath.Dir(FilePath), 0755); err != nil {
 		panic(err)
 	}
-	internalToken, _ := file.ReadFile(FilePath)
-	if internalToken != "" {
+	it, _ := file.ReadFile(FilePath)
+	if it != "" {
 		return
 	}
 	f, err := os.OpenFile(FilePath, os.O_RDWR|os.O_CREATE, 0755)
