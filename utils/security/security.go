@@ -3,6 +3,7 @@ package security
 import (
 	"crypto/rand"
 	"errors"
+	"fmt"
 	"github.com/NubeIO/nubeio-rubix-lib-auth-go/utils/file"
 	"github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/bcrypt"
@@ -24,6 +25,20 @@ func handleSecretKey() (string, error) {
 		}
 	}
 	return secretKey, nil
+}
+
+func parseToken(token string) (*jwt.Token, error) {
+	key := func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
+		secretKey, err := handleSecretKey()
+		if err != nil {
+			return nil, err
+		}
+		return []byte(secretKey), nil
+	}
+	return jwt.ParseWithClaims(token, jwt.MapClaims{}, key)
 }
 
 func GeneratePasswordHash(password string) (string, error) {
@@ -67,19 +82,20 @@ func EncodeJwtToken(userName string) (string, error) {
 }
 
 func DecodeJwtToken(token string) (bool, error) {
-	key := func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("unexpected signing method")
-		}
-		secretKey, err := handleSecretKey()
-		if err != nil {
-			return false, err
-		}
-		return []byte(secretKey), nil
-	}
-	parsedToken, err := jwt.ParseWithClaims(token, jwt.MapClaims{}, key)
+	parsedToken, err := parseToken(token)
 	if err != nil {
 		return false, err
 	}
 	return parsedToken.Valid, err
+}
+
+func GetAuthorizedUsername(token string) (string, error) {
+	parsedToken, err := parseToken(token)
+	if err != nil {
+		return "", err
+	}
+	if claims, ok := parsedToken.Claims.(jwt.MapClaims); ok && parsedToken.Valid {
+		return fmt.Sprintf("%v", claims["sub"]), nil
+	}
+	return "", err
 }
