@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 )
 
-const FilePath = "/data/rubix-service/data/internal_token.txt"
+const FilePath = "/data/auth/internal_token.txt"
 
 var internalToken *string
 
