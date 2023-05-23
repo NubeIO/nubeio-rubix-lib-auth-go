@@ -3,13 +3,12 @@ package user
 import (
 	"errors"
 	"fmt"
+	"github.com/NubeIO/nubeio-rubix-lib-auth-go/constants"
+	"github.com/NubeIO/nubeio-rubix-lib-auth-go/security"
 	"github.com/NubeIO/nubeio-rubix-lib-auth-go/utils/file"
-	"github.com/NubeIO/nubeio-rubix-lib-auth-go/utils/security"
 	"regexp"
 	"strings"
 )
-
-const FilePath = "/data/auth/user.txt"
 
 type User struct {
 	Username string `json:"username"`
@@ -22,7 +21,8 @@ func validateUsername(username string) bool {
 }
 
 func getUser() (*User, error) {
-	data, err := file.ReadFile(FilePath)
+	filePath := file.GetDataFile(constants.UserFileName)
+	data, err := file.ReadFile(filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +67,8 @@ func CreateUser(user *User) (*User, error) {
 		return nil, err
 	}
 	user.Password = hashedPassword
-	_, err = file.WriteDataToFileAsString(FilePath, fmt.Sprintf("%s:%s", user.Username, hashedPassword))
+	filePath := file.GetDataFile(constants.UserFileName)
+	_, err = file.WriteDataToFileAsString(filePath, fmt.Sprintf("%s:%s", user.Username, hashedPassword))
 	if err != nil {
 		return nil, err
 	}
