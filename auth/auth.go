@@ -3,7 +3,7 @@ package auth
 import (
 	"github.com/NubeIO/nubeio-rubix-lib-auth-go/externaltoken"
 	"github.com/NubeIO/nubeio-rubix-lib-auth-go/internaltoken"
-	"github.com/NubeIO/nubeio-rubix-lib-auth-go/utils/security"
+	"github.com/NubeIO/nubeio-rubix-lib-auth-go/security"
 	"net/http"
 	"strings"
 )

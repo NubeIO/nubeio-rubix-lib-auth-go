@@ -2,7 +2,9 @@ package file
 
 import (
 	"encoding/csv"
+	"github.com/NubeIO/nubeio-rubix-lib-auth-go/constants"
 	"os"
+	"path"
 	"path/filepath"
 )
 
@@ -67,4 +69,8 @@ func WriteCsvFile(path string, records [][]string) error {
 	w := csv.NewWriter(f)
 	err = w.WriteAll(records)
 	return err
+}
+
+func GetDataFile(fileName string) string {
+	return path.Join(constants.DataDir, fileName)
 }

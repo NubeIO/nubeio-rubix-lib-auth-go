@@ -3,12 +3,11 @@ package externaltoken
 import (
 	"errors"
 	"fmt"
+	"github.com/NubeIO/nubeio-rubix-lib-auth-go/constants"
+	"github.com/NubeIO/nubeio-rubix-lib-auth-go/security"
 	"github.com/NubeIO/nubeio-rubix-lib-auth-go/utils/file"
-	"github.com/NubeIO/nubeio-rubix-lib-auth-go/utils/security"
 	"strconv"
 )
-
-const FilePath = "/data/auth/external_token.csv"
 
 type ExternalToken struct {
 	UUID    string `json:"uuid"`
@@ -37,7 +36,8 @@ func mapToExternalTokens(records [][]string) []*ExternalToken {
 }
 
 func validateName(name string) error {
-	records, err := file.ReadCsvFile(FilePath)
+	filePath := file.GetDataFile(constants.ExternalTokenFileName)
+	records, err := file.ReadCsvFile(filePath)
 	if err != nil {
 		return err
 	}
@@ -50,7 +50,8 @@ func validateName(name string) error {
 }
 
 func GetExternalTokens() ([]*ExternalToken, error) {
-	records, err := file.ReadCsvFile(FilePath)
+	filePath := file.GetDataFile(constants.ExternalTokenFileName)
+	records, err := file.ReadCsvFile(filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +59,8 @@ func GetExternalTokens() ([]*ExternalToken, error) {
 }
 
 func GetExternalToken(uuid string) (*ExternalToken, error) {
-	records, err := file.ReadCsvFile(FilePath)
+	filePath := file.GetDataFile(constants.ExternalTokenFileName)
+	records, err := file.ReadCsvFile(filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -75,13 +77,14 @@ func CreateExternalToken(body *ExternalToken) (*ExternalToken, error) {
 	if err := validateName(body.Name); err != nil {
 		return nil, err
 	}
-	records, err := file.ReadCsvFile(FilePath)
+	filePath := file.GetDataFile(constants.ExternalTokenFileName)
+	records, err := file.ReadCsvFile(filePath)
 	if err != nil {
 		return nil, err
 	}
 	body.Token = security.GenerateToken()
 	records = append(records, []string{body.UUID, body.Name, body.Token, strconv.FormatBool(body.Blocked)})
-	err = file.WriteCsvFile(FilePath, records)
+	err = file.WriteCsvFile(filePath, records)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +92,8 @@ func CreateExternalToken(body *ExternalToken) (*ExternalToken, error) {
 }
 
 func RegenerateExternalToken(uuid string) (*ExternalToken, error) {
-	records, err := file.ReadCsvFile(FilePath)
+	filePath := file.GetDataFile(constants.ExternalTokenFileName)
+	records, err := file.ReadCsvFile(filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +101,7 @@ func RegenerateExternalToken(uuid string) (*ExternalToken, error) {
 		if record[0] == uuid {
 			record[2] = security.GenerateToken()
 			records[i] = record
-			err = file.WriteCsvFile(FilePath, records)
+			err = file.WriteCsvFile(filePath, records)
 			if err != nil {
 				return nil, err
 			}
@@ -109,7 +113,8 @@ func RegenerateExternalToken(uuid string) (*ExternalToken, error) {
 }
 
 func BlockExternalToken(uuid string, blocked bool) (*ExternalToken, error) {
-	records, err := file.ReadCsvFile(FilePath)
+	filePath := file.GetDataFile(constants.ExternalTokenFileName)
+	records, err := file.ReadCsvFile(filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +122,7 @@ func BlockExternalToken(uuid string, blocked bool) (*ExternalToken, error) {
 		if record[0] == uuid {
 			record[3] = strconv.FormatBool(blocked)
 			records[i] = record
-			err = file.WriteCsvFile(FilePath, records)
+			err = file.WriteCsvFile(filePath, records)
 			if err != nil {
 				return nil, err
 			}
@@ -128,14 +133,15 @@ func BlockExternalToken(uuid string, blocked bool) (*ExternalToken, error) {
 }
 
 func DeleteExternalToken(uuid string) (bool, error) {
-	records, err := file.ReadCsvFile(FilePath)
+	filePath := file.GetDataFile(constants.ExternalTokenFileName)
+	records, err := file.ReadCsvFile(filePath)
 	if err != nil {
 		return false, err
 	}
 	for i, record := range records {
 		if record[0] == uuid {
 			records = append(records[:i], records[i+1:]...)
-			err := file.WriteCsvFile(FilePath, records)
+			err := file.WriteCsvFile(filePath, records)
 			if err != nil {
 				return false, err
 			}
@@ -146,7 +152,8 @@ func DeleteExternalToken(uuid string) (bool, error) {
 }
 
 func ValidateExternalToken(token string) bool {
-	records, err := file.ReadCsvFile(FilePath)
+	filePath := file.GetDataFile(constants.ExternalTokenFileName)
+	records, err := file.ReadCsvFile(filePath)
 	if err != nil {
 		return false
 	}

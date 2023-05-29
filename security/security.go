@@ -4,22 +4,22 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"github.com/NubeIO/nubeio-rubix-lib-auth-go/constants"
 	"github.com/NubeIO/nubeio-rubix-lib-auth-go/utils/file"
 	"github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/bcrypt"
 	"time"
 )
 
-const SecretKeyFilePath = "/data/auth/secret.txt"
-
 func handleSecretKey() (string, error) {
-	secretKey, err := file.ReadFile(SecretKeyFilePath)
+	filePath := file.GetDataFile(constants.SecretKeyFileName)
+	secretKey, err := file.ReadFile(filePath)
 	if err != nil {
 		return "", err
 	}
 	if secretKey == "" {
 		secretKey := GenerateToken()
-		_, err = file.WriteDataToFileAsString(SecretKeyFilePath, secretKey)
+		_, err = file.WriteDataToFileAsString(filePath, secretKey)
 		if err != nil {
 			return "", err
 		}
