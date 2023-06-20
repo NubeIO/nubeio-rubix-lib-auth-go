@@ -42,7 +42,7 @@ func Login(user *User) (string, error) {
 		return "", err
 	}
 	if q != nil && q.Username == user.Username && security.CheckPasswordHash(q.Password, user.Password) {
-		return security.EncodeJwtToken(q.Username)
+		return security.EncodeJwtToken(q.Username, constants.UserRole)
 	}
 	return "", errors.New("username and password combination is incorrect")
 }
