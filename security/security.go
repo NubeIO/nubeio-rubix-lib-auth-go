@@ -41,6 +41,17 @@ func parseToken(token string) (*jwt.Token, error) {
 	return jwt.ParseWithClaims(token, jwt.MapClaims{}, key)
 }
 
+func getClaim(token string, claim string) (string, error) {
+	parsedToken, err := parseToken(token)
+	if err != nil {
+		return "", err
+	}
+	if claims, ok := parsedToken.Claims.(jwt.MapClaims); ok && parsedToken.Valid {
+		return fmt.Sprintf("%v", claims[claim]), nil
+	}
+	return "", err
+}
+
 func GeneratePasswordHash(password string) (string, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -67,12 +78,13 @@ func GenerateToken() string {
 	return string(hashedPassword)
 }
 
-func EncodeJwtToken(userName string) (string, error) {
+func EncodeJwtToken(userName string, role string) (string, error) {
 	var err error
 	atClaims := jwt.MapClaims{}
 	atClaims["exp"] = time.Now().Add(time.Hour * 24 * 30).Unix()
 	atClaims["iat"] = time.Now().Unix()
 	atClaims["sub"] = userName
+	atClaims["role"] = role
 	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 	secretKey, err := handleSecretKey()
 	if err != nil {
@@ -90,12 +102,9 @@ func DecodeJwtToken(token string) (bool, error) {
 }
 
 func GetAuthorizedUsername(token string) (string, error) {
-	parsedToken, err := parseToken(token)
-	if err != nil {
-		return "", err
-	}
-	if claims, ok := parsedToken.Claims.(jwt.MapClaims); ok && parsedToken.Valid {
-		return fmt.Sprintf("%v", claims["sub"]), nil
-	}
-	return "", err
+	return getClaim(token, "sub")
+}
+
+func GetAuthorizedRole(token string) (string, error) {
+	return getClaim(token, "role")
 }
