@@ -30,20 +30,21 @@ func AuthorizeExternal(request *http.Request) bool {
 	return false
 }
 
-func AuthorizeRoles(request *http.Request, roles ...string) (bool, error) {
+func AuthorizeRoles(request *http.Request, roles ...string) (bool, *string, error) {
 	authorization := getAuthorization(request)
 	if len(authorization) > 0 {
 		authRole, err := GetAuthorizedRole(request)
 		if err != nil {
-			return false, err
+			return false, nil, err
 		}
 		for _, role := range roles {
 			if authRole == role {
-				return security.DecodeJwtToken(authorization[len(authorization)-1])
+				authorized, err := security.DecodeJwtToken(authorization[len(authorization)-1])
+				return authorized, &authRole, err
 			}
 		}
 	}
-	return false, errors.New("token is invalid")
+	return false, nil, errors.New("token is invalid")
 }
 
 func GetToken(request *http.Request) string {
