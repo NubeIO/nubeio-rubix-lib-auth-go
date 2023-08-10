@@ -51,7 +51,7 @@ func GetToken(request *http.Request) string {
 	authorization := getAuthorization(request)
 	if len(authorization) > 0 {
 		prefix := authorization[0]
-		if len(authorization) == 2 && prefix == "Internal" || prefix == "External" {
+		if len(authorization) == 2 && (prefix == "Internal" || prefix == "External") {
 			return authorization[1]
 		}
 		return authorization[len(authorization)-1]
