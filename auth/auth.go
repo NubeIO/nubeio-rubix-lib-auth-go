@@ -9,12 +9,16 @@ import (
 	"strings"
 )
 
-func getAuthorization(request *http.Request) []string {
-	return strings.SplitN(request.Header.Get("Authorization"), " ", 2)
+func GetAuthorization(request *http.Request) []string {
+	authorization := request.Header.Get("Authorization")
+	if authorization == "" {
+		return nil
+	}
+	return strings.SplitN(authorization, " ", 2)
 }
 
 func AuthorizeInternal(request *http.Request) bool {
-	authorization := getAuthorization(request)
+	authorization := GetAuthorization(request)
 	if len(authorization) == 2 && authorization[0] == "Internal" &&
 		authorization[1] == internaltoken.GetInternalToken(false) {
 		return true
@@ -23,7 +27,7 @@ func AuthorizeInternal(request *http.Request) bool {
 }
 
 func AuthorizeExternal(request *http.Request) bool {
-	authorization := getAuthorization(request)
+	authorization := GetAuthorization(request)
 	if len(authorization) == 2 && authorization[0] == "External" {
 		return externaltoken.ValidateExternalToken(authorization[1])
 	}
@@ -31,7 +35,7 @@ func AuthorizeExternal(request *http.Request) bool {
 }
 
 func AuthorizeRoles(request *http.Request, roles ...string) (bool, *string, error) {
-	authorization := getAuthorization(request)
+	authorization := GetAuthorization(request)
 	if len(authorization) > 0 {
 		authRole, err := GetAuthorizedRole(request)
 		if err != nil {
@@ -44,11 +48,11 @@ func AuthorizeRoles(request *http.Request, roles ...string) (bool, *string, erro
 			}
 		}
 	}
-	return false, nil, errors.New("token is invalid")
+	return false, nil, errors.New("authorization header is missing")
 }
 
 func GetToken(request *http.Request) string {
-	authorization := getAuthorization(request)
+	authorization := GetAuthorization(request)
 	if len(authorization) > 0 {
 		prefix := authorization[0]
 		if len(authorization) == 2 && (prefix == "Internal" || prefix == "External") {
